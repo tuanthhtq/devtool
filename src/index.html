@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>devtool</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="/main.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell" aria-label="DevTool compact controls">
+      <section class="panel" aria-labelledby="avd-title">
+        <div class="section-heading">
+          <h1 id="avd-title">ADV</h1>
+          <div class="heading-actions">
+            <button class="emoji-action" type="button" data-action="scan-avd" title="Scan AVDs" aria-label="Scan AVDs">🔍</button>
+            <button class="emoji-action" type="button" data-action="set-sdk" title="Select Android SDK" aria-label="Select Android SDK">➕</button>
+          </div>
+        </div>
+        <div class="list" id="avd-list"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="apps-title">
+        <div class="section-heading">
+          <h2 id="apps-title">Apps</h2>
+          <div class="heading-actions">
+            <button class="emoji-action" type="button" data-action="add-app" title="Add app" aria-label="Add app">➕</button>
+          </div>
+        </div>
+        <div class="list" id="apps-list"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="nginx-title">
+        <div class="section-heading section-heading-stack">
+          <div class="title-actions">
+            <h2 id="nginx-title">Nginx</h2>
+            <div class="heading-actions">
+              <button class="emoji-action" type="button" data-action="nginx-start" title="Start Nginx" aria-label="Start Nginx">▶️</button>
+              <button class="emoji-action" type="button" data-action="nginx-stop" title="Stop Nginx" aria-label="Stop Nginx">⏹️</button>
+              <button class="emoji-action" type="button" data-action="nginx-reload" title="Reload Nginx" aria-label="Reload Nginx">🔄</button>
+              <button class="emoji-action" type="button" data-action="nginx-config" title="Open Nginx config" aria-label="Open Nginx config">📄</button>
+            </div>
+          </div>
+          <p class="path-text" id="nginx-path">Not configured</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="ports-title">
+        <div class="section-heading">
+          <h2 id="ports-title">Ports</h2>
+          <form class="port-search" id="port-form">
+            <label class="sr-only" for="port-input">Port</label>
+            <input id="port-input" class="port-input" type="number" min="1" max="65535" value="3000" />
+            <button class="emoji-action" type="submit" title="Find process" aria-label="Find process">🔍</button>
+          </form>
+        </div>
+        <div class="list port-results" id="port-result"></div>
+      </section>
+
+      <section class="panel settings-panel" aria-labelledby="settings-title">
+        <div class="section-heading">
+          <h2 id="settings-title">Settings</h2>
+        </div>
+        <div class="settings-grid" id="settings-grid"></div>
+      </section>
+
+      <section class="action-console" aria-label="Action log">
+        <pre id="action-log" aria-live="polite">&gt; ready - waiting for action</pre>
+      </section>
+    </main>
+  </body>
+</html>

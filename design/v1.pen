@@ -1,0 +1,784 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "I9BMOk",
+      "x": 0,
+      "y": 0,
+      "name": "DevTool Compact Window",
+      "clip": true,
+      "width": 330,
+      "height": 390,
+      "fill": "#0D1117",
+      "layout": "vertical",
+      "padding": 10,
+      "children": [
+        {
+          "type": "frame",
+          "id": "nYcxV",
+          "name": "Android AVD Section",
+          "width": "fill_container",
+          "fill": "#F5F6F8",
+          "stroke": "$compact-line",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            5,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "rYsSs",
+              "name": "Android AVD Header",
+              "width": 82,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "d4arS",
+                  "name": "Android AVD Copy",
+                  "width": 32,
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Ec8ln",
+                      "name": "Android AVD Title",
+                      "fill": "#F3F4F6",
+                      "content": "ADV",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$compact-font",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mJEKL",
+                  "name": "AVD Actions",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NMkgI",
+                      "name": "Scan AVDs Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "🔍",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dUQLb",
+                      "name": "Select SDK Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "➕",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "PL5Vo",
+              "name": "AVD Rows",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "DjaY7",
+                  "name": "Pixel Row",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#151B24",
+                  "cornerRadius": 5,
+                  "padding": [
+                    0,
+                    6
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "QYTvZ",
+                      "name": "Pixel Row Left",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TPLAP",
+                          "name": "Pixel Row Label",
+                          "fill": "#F3F4F6",
+                          "content": "Pixel_7_API_35",
+                          "lineHeight": 1.1,
+                          "fontFamily": "$compact-font",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LZ85r",
+                      "name": "Pixel Row Right",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Lxicr",
+                          "name": "Stop AVD Emoji",
+                          "fill": "#E5E7EB",
+                          "content": "⏹️",
+                          "fontFamily": "Segoe UI Emoji",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "eBvu7",
+          "name": "Custom Apps Section",
+          "width": 304,
+          "fill": "#F5F6F8",
+          "stroke": "$compact-line",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            5,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "OZ0FQ",
+              "name": "Custom Apps Header",
+              "width": 85,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "QnIxp",
+                  "name": "Custom Apps Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "IiEGR",
+                      "name": "Custom Apps Title",
+                      "fill": "#F3F4F6",
+                      "content": "Apps",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$compact-font",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "FOxgH",
+                  "name": "App Actions",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UQOSM",
+                      "name": "Add App Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "➕",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cMhdd",
+                      "name": "Edit Apps Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "✏️",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "q0xD4q",
+              "name": "App Rows",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "QvAOe",
+                  "name": "ADB Tools Row",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#151B24",
+                  "cornerRadius": 5,
+                  "gap": 44,
+                  "padding": [
+                    0,
+                    6
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ENJ4G",
+                      "name": "ADB Tools Text",
+                      "width": 204,
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N4yri",
+                          "name": "ADB Tools Name",
+                          "fill": "#F3F4F6",
+                          "content": "ADB Tools",
+                          "lineHeight": 1.1,
+                          "fontFamily": "$compact-font",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Bgb0a",
+                      "name": "ADB Tools Buttons",
+                      "width": 44,
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "UeKdo",
+                          "name": "Run App Emoji",
+                          "fill": "#E5E7EB",
+                          "content": "▶️",
+                          "fontFamily": "Segoe UI Emoji",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TZ0KG",
+                          "name": "Delete App Emoji",
+                          "fill": "#E5E7EB",
+                          "content": "🗑️",
+                          "fontFamily": "Segoe UI Emoji",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "W2bx4T",
+          "name": "Nginx Section",
+          "width": "fill_container",
+          "fill": "#F5F6F8",
+          "stroke": "$compact-line",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            5,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "fuK0g",
+              "name": "Nginx Header",
+              "width": 188,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Cd4lI",
+                  "name": "Nginx Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "QZwIZ",
+                      "name": "Nginx Title",
+                      "fill": "#F3F4F6",
+                      "content": "Nginx",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$compact-font",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QVBQa",
+                      "name": "Nginx Sub",
+                      "fill": "#9CA3AF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "D:\\nginx\\nginx.exe",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$compact-font",
+                      "fontSize": 10,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b7t2Gk",
+                  "name": "Nginx Buttons",
+                  "gap": 7,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Njja1",
+                      "name": "Start Nginx Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "▶️",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "n0Y5Q",
+                      "name": "Stop Nginx Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "⏹️",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "W1Tmgd",
+                      "name": "Reload Nginx Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "🔄",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "N6stLT",
+                      "name": "Nginx Config Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "📄",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "nmfhH",
+          "name": "Ports Section",
+          "width": "fill_container",
+          "fill": "#F5F6F8",
+          "stroke": "$compact-line",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            5,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "UBu9D",
+              "name": "Ports Header",
+              "width": 156,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YWXVn",
+                  "name": "Ports Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WT4rp",
+                      "name": "Ports Title",
+                      "fill": "#F3F4F6",
+                      "content": "Ports",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$compact-font",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mXc61",
+                  "name": "Port Search",
+                  "gap": 7,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Dlm9C",
+                      "name": "Port Input",
+                      "width": 90,
+                      "height": 26,
+                      "fill": "#0F141C",
+                      "cornerRadius": 5,
+                      "stroke": "#2B3442",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "justifyContent": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "t49dj",
+                          "name": "Port Input Text",
+                          "fill": "#F3F4F6",
+                          "content": "3000",
+                          "lineHeight": 1.1,
+                          "fontFamily": "$compact-mono",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "YmJl8",
+                      "name": "Find Port Emoji",
+                      "fill": "#E5E7EB",
+                      "content": "🔍",
+                      "fontFamily": "Segoe UI Emoji",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Z4PD9G",
+          "name": "Startup / Tray Section",
+          "width": "fill_container",
+          "fill": "#F5F6F8",
+          "stroke": "$compact-line",
+          "layout": "vertical",
+          "gap": 4,
+          "padding": [
+            5,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "ZPtFd",
+              "name": "Startup / Tray Header",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ND2b5",
+                  "name": "Startup / Tray Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Kpc0l",
+                      "name": "Startup / Tray Title",
+                      "fill": "#F3F4F6",
+                      "content": "Settings",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$compact-font",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Snhyl",
+              "name": "Startup Chips",
+              "width": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "h7ds3I",
+                  "name": "Settings Row One",
+                  "width": "fill_container",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gr6jj",
+                      "name": "Checkbox Setting Start Windows",
+                      "height": 18,
+                      "fill": "#00000000",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 2,
+                          "id": "SDphr",
+                          "name": "Checkbox Box",
+                          "fill": "#0F141C",
+                          "width": 11,
+                          "height": 11,
+                          "stroke": "#64748B",
+                          "strokeWidth": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "b1Iv6i",
+                          "name": "Checkbox Label",
+                          "fill": "#F3F4F6",
+                          "content": "Start Windows",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Ail7y",
+                      "name": "Checkbox Setting Start Minimized",
+                      "height": 18,
+                      "fill": "#00000000",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 2,
+                          "id": "GynJv",
+                          "name": "Checkbox Box",
+                          "fill": "#3B82F6",
+                          "width": 11,
+                          "height": 11,
+                          "stroke": "#3B82F6",
+                          "strokeWidth": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "R3tWf",
+                          "name": "Checkbox Check",
+                          "fill": "#9CA3AF",
+                          "content": "✓",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvwSF",
+                          "name": "Checkbox Label",
+                          "fill": "#F3F4F6",
+                          "content": "Start minimized",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "w8HkEh",
+          "name": "Action Console",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "#080D13",
+          "cornerRadius": 6,
+          "stroke": "#2B3442",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "padding": 8,
+          "children": [
+            {
+              "type": "text",
+              "id": "MDLEP",
+              "name": "Console Output",
+              "fill": "#86EFAC",
+              "content": "> ready - waiting for action",
+              "fontFamily": "Geist Mono",
+              "fontSize": 10,
+              "fontWeight": "500"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "surface-app": {
+      "type": "color",
+      "value": "#F4F6F8"
+    },
+    "surface-panel": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "surface-sidebar": {
+      "type": "color",
+      "value": "#111827"
+    },
+    "text-main": {
+      "type": "color",
+      "value": "#111827"
+    },
+    "text-muted": {
+      "type": "color",
+      "value": "#6B7280"
+    },
+    "text-inverse": {
+      "type": "color",
+      "value": "#F9FAFB"
+    },
+    "border-soft": {
+      "type": "color",
+      "value": "#E5E7EB"
+    },
+    "accent-blue": {
+      "type": "color",
+      "value": "#2563EB"
+    },
+    "accent-green": {
+      "type": "color",
+      "value": "#16A34A"
+    },
+    "accent-amber": {
+      "type": "color",
+      "value": "#D97706"
+    },
+    "accent-red": {
+      "type": "color",
+      "value": "#DC2626"
+    },
+    "font-ui": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "font-mono": {
+      "type": "string",
+      "value": "Geist Mono"
+    },
+    "compact-bg": {
+      "type": "color",
+      "value": "#F5F6F8"
+    },
+    "compact-panel": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "compact-line": {
+      "type": "color",
+      "value": "#E3E7ED"
+    },
+    "compact-text": {
+      "type": "color",
+      "value": "#111827"
+    },
+    "compact-muted": {
+      "type": "color",
+      "value": "#6B7280"
+    },
+    "compact-blue": {
+      "type": "color",
+      "value": "#2563EB"
+    },
+    "compact-green": {
+      "type": "color",
+      "value": "#16A34A"
+    },
+    "compact-amber": {
+      "type": "color",
+      "value": "#D97706"
+    },
+    "compact-red": {
+      "type": "color",
+      "value": "#DC2626"
+    },
+    "compact-font": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "compact-mono": {
+      "type": "string",
+      "value": "Geist Mono"
+    }
+  },
+  "fileToken": "f5e000ac-7aab-4670-aa6a-52c2b348b3a7"
+}
