@@ -59,6 +59,17 @@ Generated bundles are written under:
 - `src-tauri/target/release/bundle/msi/`
 - `src-tauri/target/release/bundle/nsis/`
 
+## Releases (CI/CD)
+
+Pushing a version tag matching `v*` triggers [`.github/workflows/release.yml`](.github/workflows/release.yml) on `windows-latest` to run tests, build `.msi` and `-setup.exe` installers, and publish a GitHub Release automatically:
+
+```powershell
+# 1. Bump version in package.json, src-tauri/Cargo.toml, and src-tauri/tauri.conf.json
+# 2. Commit, tag, and push
+git tag v0.2.0
+git push origin main --tags
+```
+
 ## Configuration
 
 User settings and saved custom apps are stored locally at:
