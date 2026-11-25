@@ -8,65 +8,104 @@
     <script type="module" src="/main.js" defer></script>
   </head>
   <body>
-    <main class="app-shell" aria-label="DevTool compact controls">
-      <section class="panel" aria-labelledby="avd-title">
-        <div class="section-heading">
-          <h1 id="avd-title">ADV</h1>
-          <div class="heading-actions">
-            <button class="emoji-action" type="button" data-action="scan-avd" title="Scan AVDs" aria-label="Scan AVDs">🔍</button>
-            <button class="emoji-action" type="button" data-action="set-sdk" title="Select Android SDK" aria-label="Select Android SDK">➕</button>
+    <main class="app-shell" aria-label="DevTool controls">
+      <h1 class="sr-only">DevTool</h1>
+
+      <section class="section" aria-labelledby="avd-title">
+        <div class="section-header">
+          <h2 id="avd-title">Android AVD</h2>
+          <div class="section-actions">
+            <button class="icon-btn icon-btn-accent" type="button" data-action="open-create-avd" title="Create AVD" aria-label="Create AVD">
+              <span data-icon="plus" data-icon-size="14"></span>
+            </button>
+            <button class="icon-btn" type="button" data-action="scan-avd" title="Scan AVDs" aria-label="Scan AVDs">
+              <span data-icon="refresh" data-icon-size="14"></span>
+            </button>
+            <button class="icon-btn" type="button" data-action="set-sdk" title="Select Android SDK" aria-label="Select Android SDK">
+              <span data-icon="folder" data-icon-size="14"></span>
+            </button>
           </div>
         </div>
         <div class="list" id="avd-list"></div>
       </section>
 
-      <section class="panel" aria-labelledby="apps-title">
-        <div class="section-heading">
+      <section class="section" aria-labelledby="apps-title">
+        <div class="section-header">
           <h2 id="apps-title">Apps</h2>
-          <div class="heading-actions">
-            <button class="emoji-action" type="button" data-action="add-app" title="Add app" aria-label="Add app">➕</button>
+          <div class="section-actions">
+            <button class="icon-btn icon-btn-accent" type="button" data-action="add-app" title="Add app" aria-label="Add app">
+              <span data-icon="plus" data-icon-size="14"></span>
+            </button>
           </div>
         </div>
         <div class="list" id="apps-list"></div>
       </section>
 
-      <section class="panel" aria-labelledby="nginx-title">
-        <div class="section-heading section-heading-stack">
-          <div class="title-actions">
-            <h2 id="nginx-title">Nginx</h2>
-            <div class="heading-actions">
-              <button class="emoji-action" type="button" data-action="nginx-start" title="Start Nginx" aria-label="Start Nginx">▶️</button>
-              <button class="emoji-action" type="button" data-action="nginx-stop" title="Stop Nginx" aria-label="Stop Nginx">⏹️</button>
-              <button class="emoji-action" type="button" data-action="nginx-reload" title="Reload Nginx" aria-label="Reload Nginx">🔄</button>
-              <button class="emoji-action" type="button" data-action="nginx-config" title="Open Nginx config" aria-label="Open Nginx config">📄</button>
-            </div>
+      <section class="section" aria-labelledby="nginx-title">
+        <div class="section-header">
+          <h2 id="nginx-title">Nginx</h2>
+          <div class="section-actions">
+            <button class="icon-btn icon-btn-success" type="button" data-action="nginx-start" title="Start Nginx" aria-label="Start Nginx">
+              <span data-icon="play" data-icon-size="13"></span>
+            </button>
+            <button class="icon-btn icon-btn-danger" type="button" data-action="nginx-stop" title="Stop Nginx" aria-label="Stop Nginx">
+              <span data-icon="square" data-icon-size="13"></span>
+            </button>
+            <button class="icon-btn icon-btn-accent" type="button" data-action="nginx-reload" title="Reload Nginx" aria-label="Reload Nginx">
+              <span data-icon="refresh" data-icon-size="13"></span>
+            </button>
+            <button class="icon-btn" type="button" data-action="nginx-config" title="Open Nginx config" aria-label="Open Nginx config">
+              <span data-icon="file" data-icon-size="13"></span>
+            </button>
           </div>
-          <p class="path-text" id="nginx-path">Not configured</p>
         </div>
+        <p class="path-text" id="nginx-path" title="Not configured">Not configured</p>
       </section>
 
-      <section class="panel" aria-labelledby="ports-title">
-        <div class="section-heading">
+      <section class="section" aria-labelledby="ports-title">
+        <div class="section-header">
           <h2 id="ports-title">Ports</h2>
           <form class="port-search" id="port-form">
             <label class="sr-only" for="port-input">Port</label>
-            <input id="port-input" class="port-input" type="number" min="1" max="65535" value="3000" />
-            <button class="emoji-action" type="submit" title="Find process" aria-label="Find process">🔍</button>
+            <input id="port-input" class="port-input" type="number" min="1" max="65535" value="3000" placeholder="3000" />
+            <button class="icon-btn icon-btn-accent" type="submit" title="Find process" aria-label="Find process">
+              <span data-icon="search" data-icon-size="14"></span>
+            </button>
           </form>
         </div>
-        <div class="list port-results" id="port-result"></div>
+        <div class="list" id="port-result"></div>
       </section>
 
-      <section class="panel settings-panel" aria-labelledby="settings-title">
-        <div class="section-heading">
-          <h2 id="settings-title">Settings</h2>
+      <section class="section" aria-labelledby="secrets-title">
+        <div class="section-header">
+          <h2 id="secrets-title">Secrets</h2>
+          <label class="length-field" for="secret-length">
+            <span class="length-label">Bytes</span>
+            <input id="secret-length" class="length-input" type="number" min="1" max="256" value="32" />
+          </label>
         </div>
+        <div class="secret-grid">
+          <button class="action-btn action-btn-accent" type="button" data-action="generate-api-token" title="Generate API token and copy to clipboard">
+            <span data-icon="key" data-icon-size="13"></span>
+            <span>API Token</span>
+          </button>
+          <button class="action-btn action-btn-success" type="button" data-action="generate-password" title="Generate password and copy to clipboard">
+            <span data-icon="lock" data-icon-size="13"></span>
+            <span>Password</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="section section-footer" aria-label="Settings">
         <div class="settings-grid" id="settings-grid"></div>
       </section>
-
-      <section class="action-console" aria-label="Action log">
-        <pre id="action-log" aria-live="polite">&gt; ready - waiting for action</pre>
-      </section>
     </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+      <span class="toast-message" id="toast-message"></span>
+      <button class="icon-btn toast-close" id="toast-close" type="button" aria-label="Dismiss notification" title="Dismiss">
+        <span data-icon="x" data-icon-size="13"></span>
+      </button>
+    </div>
   </body>
 </html>

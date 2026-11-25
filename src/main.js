@@ -1,3 +1,11 @@
+import { createIcon, hydrateIcons } from "./icons.js";
+import {
+  DEFAULT_SECRET_BYTES,
+  generateApiToken,
+  generatePassword,
+  parseSecretByteLength,
+} from "./secrets.js";
+
 const invoke = window.__TAURI__?.core?.invoke;
 const openDialog = window.__TAURI__?.dialog?.open;
 
@@ -8,10 +16,15 @@ const settingDefinitions = [
 
 const state = {
   avds: [],
+  avdTooling: null,
+  creatingAvd: false,
+  creatingAvdBusy: false,
   apps: [],
   editingAppId: null,
   nginx: null,
+  portSearchPromise: null,
   ports: [],
+  toastTimer: null,
   settings: {
     startWithWindows: false,
     startMinimized: false,
@@ -33,34 +46,63 @@ async function callCommand(command, args = {}) {
   return invoke(command, args);
 }
 
-function writeLog(message, level = "info") {
-  const time = new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const line = `[${time}] ${level === "error" ? "error" : ">"} ${message}`;
-  const lines = [...elements.actionLog.textContent.split("\n"), line].slice(-50);
+async function copyToClipboard(text) {
+  if (invoke) {
+    await callCommand("copy_to_clipboard", { text });
+    return;
+  }
 
-  elements.actionLog.textContent = lines.join("\n");
-  elements.actionLog.dataset.level = level;
-  elements.actionLog.parentElement.scrollTop = elements.actionLog.parentElement.scrollHeight;
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  throw new Error("Clipboard is unavailable.");
+}
+
+function showToast(message, level = "info", { persist = false } = {}) {
+  if (!elements.toast || !elements.toastMessage) {
+    return;
+  }
+
+  window.clearTimeout(state.toastTimer);
+  elements.toastMessage.textContent = message;
+  elements.toast.dataset.level = level;
+  elements.toast.setAttribute("role", level === "error" ? "alert" : "status");
+  elements.toast.setAttribute("aria-live", level === "error" ? "assertive" : "polite");
+  elements.toast.hidden = false;
+
+  if (level !== "error" && !persist) {
+    state.toastTimer = window.setTimeout(() => {
+      elements.toast.hidden = true;
+    }, 2200);
+  }
+}
+
+function hideToast() {
+  window.clearTimeout(state.toastTimer);
+  if (elements.toast) {
+    elements.toast.hidden = true;
+  }
 }
 
 function setStatus(message) {
-  writeLog(message);
+  showToast(message, "success");
 }
 
 function setError(error) {
   const message = error instanceof Error ? error.message : String(error);
-  writeLog(message, "error");
+  showToast(message, "error");
 }
 
-function createButton(label, className, action, dataset = {}, options = {}) {
+function createIconButton(label, variantClass, action, iconName, dataset = {}, options = {}) {
   const button = document.createElement("button");
-  button.className = options.emoji ? "emoji-action" : `btn ${className}`;
+  button.className = variantClass ? `icon-btn ${variantClass}` : "icon-btn";
   button.type = "button";
   button.dataset.action = action;
+  button.setAttribute("aria-label", label);
+  button.title = options.title || label;
+  button.disabled = Boolean(options.disabled);
 
   for (const [key, value] of Object.entries(dataset)) {
     if (value !== undefined && value !== null) {
@@ -68,14 +110,7 @@ function createButton(label, className, action, dataset = {}, options = {}) {
     }
   }
 
-  if (options.emoji) {
-    button.setAttribute("aria-label", label);
-    button.title = label;
-    button.textContent = options.emoji;
-  } else {
-    button.textContent = label;
-  }
-
+  button.append(createIcon(iconName, 14));
   return button;
 }
 
@@ -95,7 +130,7 @@ function appNameFromPath(path) {
 
 function createEmptyRow(message) {
   const row = document.createElement("article");
-  row.className = "list-row";
+  row.className = "list-row list-row-empty";
 
   const text = document.createElement("p");
   text.className = "status-text";
@@ -105,61 +140,197 @@ function createEmptyRow(message) {
   return row;
 }
 
+function createAvdFormElement() {
+  const tooling = state.avdTooling;
+  const wrapper = document.createElement("div");
+  wrapper.className = "avd-create-form";
+
+  const top = document.createElement("div");
+  top.className = "avd-create-top";
+
+  if (tooling?.mode === "full") {
+    const nameInput = document.createElement("input");
+    nameInput.className = "avd-name-input";
+    nameInput.type = "text";
+    nameInput.placeholder = "AVD name (e.g. Pixel_Root)";
+    nameInput.setAttribute("aria-label", "AVD name");
+    nameInput.disabled = state.creatingAvdBusy;
+
+    const select = document.createElement("select");
+    select.className = "avd-select";
+    select.setAttribute("aria-label", "Android image and architecture");
+    select.disabled = state.creatingAvdBusy;
+
+    const installed = tooling.images.filter((img) => img.installed);
+    const downloadable = tooling.images.filter((img) => !img.installed);
+
+    if (installed.length > 0) {
+      const group = document.createElement("optgroup");
+      group.label = "Installed";
+      for (const img of installed) {
+        const option = document.createElement("option");
+        option.value = img.packageId;
+        option.textContent = img.label;
+        group.append(option);
+      }
+      select.append(group);
+    }
+
+    if (downloadable.length > 0) {
+      const group = document.createElement("optgroup");
+      group.label = "Download & Create";
+      for (const img of downloadable) {
+        const option = document.createElement("option");
+        option.value = img.packageId;
+        option.textContent = img.label;
+        group.append(option);
+      }
+      select.append(group);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "row-actions";
+    actions.append(
+      createIconButton(
+        "Create AVD",
+        "icon-btn-success",
+        "submit-create-avd",
+        "check",
+        {},
+        { disabled: state.creatingAvdBusy },
+      ),
+      createIconButton(
+        "Cancel",
+        "",
+        "cancel-create-avd",
+        "x",
+        {},
+        { disabled: state.creatingAvdBusy },
+      ),
+    );
+
+    top.append(nameInput, actions);
+    wrapper.append(top, select);
+  } else {
+    const select = document.createElement("select");
+    select.className = "avd-select";
+    select.setAttribute("aria-label", "Device profile");
+    select.disabled = state.creatingAvdBusy;
+
+    for (const profile of tooling?.profiles || ["medium_phone"]) {
+      const option = document.createElement("option");
+      option.value = profile;
+      option.textContent = profile;
+      select.append(option);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "row-actions";
+    actions.append(
+      createIconButton(
+        "Create AVD",
+        "icon-btn-success",
+        "submit-create-avd",
+        "check",
+        {},
+        { disabled: state.creatingAvdBusy },
+      ),
+      createIconButton(
+        "Cancel",
+        "",
+        "cancel-create-avd",
+        "x",
+        {},
+        { disabled: state.creatingAvdBusy },
+      ),
+    );
+
+    top.append(select, actions);
+    wrapper.append(top);
+  }
+
+  return wrapper;
+}
+
 function renderAvds() {
   elements.avdList.replaceChildren();
 
+  if (state.creatingAvd && state.avdTooling?.canCreate) {
+    elements.avdList.append(createAvdFormElement());
+  }
+
   if (state.avds.length === 0) {
-    elements.avdList.append(createEmptyRow("No AVDs found"));
+    if (!state.creatingAvd) {
+      elements.avdList.append(createEmptyRow("No AVDs found"));
+    }
     return;
   }
 
   for (const avd of state.avds) {
+    const isRunning = avd.status === "running";
     const row = document.createElement("article");
     row.className = "list-row";
 
     const main = document.createElement("div");
     main.className = "item-main";
 
+    const dot = document.createElement("span");
+    dot.className = isRunning ? "status-dot status-dot-running" : "status-dot";
+    dot.setAttribute("aria-hidden", "true");
+
+    const statusLabel = document.createElement("span");
+    statusLabel.className = "sr-only";
+    statusLabel.textContent = isRunning ? "Running: " : "Stopped: ";
+
     const title = document.createElement("p");
     title.className = "item-title";
     title.textContent = avd.name;
+    title.title = `${avd.name} (${isRunning ? "running" : "stopped"})`;
 
-    main.append(title);
+    main.append(dot, statusLabel, title);
 
     const actions = document.createElement("div");
     actions.className = "row-actions";
 
-    const actionButton =
-      avd.status === "running"
-        ? createButton(
-            "Stop",
-            "btn-danger",
-            "stop-avd",
-            {
-              name: avd.name,
-              serial: avd.serial,
-            },
-            { emoji: "⏹️" },
-          )
-        : createButton(
-            "Start",
-            "btn-success",
-            "start-avd",
-            { name: avd.name },
-            { emoji: "▶️" },
-          );
+    const runButton = isRunning
+      ? createIconButton("Stop AVD", "icon-btn-danger", "stop-avd", "square", {
+          name: avd.name,
+          serial: avd.serial,
+        })
+      : createIconButton("Start AVD", "icon-btn-success", "start-avd", "play", {
+          name: avd.name,
+        });
 
-    actions.append(actionButton);
+    const deleteButton = createIconButton(
+      "Delete AVD",
+      "icon-btn-danger",
+      "delete-avd",
+      "trash",
+      { name: avd.name },
+      {
+        disabled: isRunning,
+        title: isRunning ? "Stop AVD before deleting" : "Delete AVD",
+      },
+    );
+
+    actions.append(runButton, deleteButton);
     row.append(main, actions);
     elements.avdList.append(row);
   }
+}
+
+function focusCreateAvdField() {
+  const input =
+    elements.avdList.querySelector(".avd-name-input") ||
+    elements.avdList.querySelector(".avd-select");
+  input?.focus();
 }
 
 function renderApps() {
   elements.appsList.replaceChildren();
 
   if (state.apps.length === 0) {
-    elements.appsList.append(createEmptyRow("No custom apps saved"));
+    elements.appsList.append(createEmptyRow("No apps saved"));
     return;
   }
 
@@ -183,43 +354,24 @@ function renderApps() {
       main.append(input);
 
       actions.append(
-        createButton(
-          "Save display name",
-          "btn-success",
-          "save-app-name",
-          { id: app.id },
-          { emoji: "✅" },
-        ),
-        createButton(
-          "Cancel",
-          "btn-neutral",
-          "cancel-app-name",
-          { id: app.id },
-          { emoji: "❌" },
-        ),
+        createIconButton("Save name", "icon-btn-success", "save-app-name", "check", {
+          id: app.id,
+        }),
+        createIconButton("Cancel", "", "cancel-app-name", "x", { id: app.id }),
       );
     } else {
       const title = document.createElement("p");
       title.className = "item-title";
       title.textContent = app.name;
+      title.title = app.name;
       main.append(title);
 
       actions.append(
-        createButton("Run", "btn-success", "run-app", { id: app.id }, { emoji: "▶️" }),
-        createButton(
-          "Edit",
-          "btn-neutral",
-          "edit-app",
-          { id: app.id },
-          { emoji: "✏️" },
-        ),
-        createButton(
-          "Delete",
-          "btn-danger",
-          "delete-app",
-          { id: app.id },
-          { emoji: "🗑️" },
-        ),
+        createIconButton("Run app", "icon-btn-success", "run-app", "play", { id: app.id }),
+        createIconButton("Rename app", "", "edit-app", "pencil", { id: app.id }),
+        createIconButton("Delete app", "icon-btn-danger", "delete-app", "trash", {
+          id: app.id,
+        }),
       );
     }
 
@@ -235,7 +387,9 @@ function focusInlineAppName() {
 }
 
 function renderNginx() {
-  elements.nginxPath.textContent = state.nginx?.path || "Not configured";
+  const path = state.nginx?.path || "Not configured";
+  elements.nginxPath.textContent = path;
+  elements.nginxPath.title = path;
 }
 
 function renderSettings() {
@@ -271,17 +425,24 @@ function renderPortResult() {
     const row = document.createElement("article");
     row.className = "port-row";
 
-    const result = document.createElement("div");
-    result.className = "item-main";
+    const stack = document.createElement("div");
+    stack.className = "item-stack";
 
-    const text = document.createElement("p");
-    text.className = "process-text";
-    text.textContent = `${process.processName}  PID ${process.pid}  ${process.protocol} ${process.localAddress}`;
+    const name = document.createElement("p");
+    name.className = "process-name";
+    name.textContent = process.processName;
+    name.title = process.processName;
 
-    result.append(text);
+    const meta = document.createElement("p");
+    meta.className = "process-meta";
+    meta.textContent = `PID ${process.pid} · ${process.protocol} ${process.localAddress}`;
+
+    stack.append(name, meta);
     row.append(
-      result,
-      createButton("Kill", "btn-danger", "kill-process", { pid: process.pid }, { emoji: "❌" }),
+      stack,
+      createIconButton("Kill process", "icon-btn-danger", "kill-process", "x", {
+        pid: process.pid,
+      }),
     );
     elements.portResult.append(row);
   }
@@ -300,8 +461,8 @@ async function saveSettings() {
 async function syncTray() {
   try {
     await callCommand("refresh_tray");
-  } catch (error) {
-    writeLog(`tray sync skipped: ${error instanceof Error ? error.message : String(error)}`);
+  } catch {
+    // Tray refresh is non-critical when main UI actions succeed.
   }
 }
 
@@ -309,6 +470,102 @@ async function refreshAvds() {
   state.avds = await callCommand("scan_avds");
   renderAvds();
   await syncTray();
+}
+
+async function openCreateAvd() {
+  if (state.creatingAvd) {
+    state.creatingAvd = false;
+    renderAvds();
+    return;
+  }
+
+  showToast("Checking Android SDK tools...", "info", { persist: true });
+  const tooling = await callCommand("get_avd_tooling_status");
+  state.avdTooling = tooling;
+
+  if (!tooling.canCreate) {
+    throw new Error(tooling.missingReason || "Required Android SDK tools are missing.");
+  }
+
+  hideToast();
+  state.creatingAvd = true;
+  renderAvds();
+  focusCreateAvdField();
+}
+
+async function submitCreateAvd() {
+  const tooling = state.avdTooling;
+  if (!tooling?.canCreate || state.creatingAvdBusy) {
+    return;
+  }
+
+  let inputPayload;
+  let needsDownload = false;
+
+  if (tooling.mode === "full") {
+    const nameInput = elements.avdList.querySelector(".avd-name-input");
+    const select = elements.avdList.querySelector(".avd-select");
+    const name = nameInput?.value.trim() || "";
+    if (!name) {
+      setError("AVD name is required");
+      nameInput?.focus();
+      return;
+    }
+
+    const packageId = select?.value;
+    const selectedImg = tooling.images.find((img) => img.packageId === packageId);
+    needsDownload = Boolean(selectedImg && !selectedImg.installed);
+    if (
+      needsDownload &&
+      !window.confirm(`Download ${selectedImg.label.replace(" · Download", "")} and create '${name}'?`)
+    ) {
+      return;
+    }
+
+    inputPayload = { name, packageId, profile: null };
+  } else {
+    const select = elements.avdList.querySelector(".avd-select");
+    inputPayload = { name: null, packageId: null, profile: select?.value || "medium_phone" };
+  }
+
+  state.creatingAvdBusy = true;
+  renderAvds();
+  showToast(
+    needsDownload
+      ? "Downloading system image & creating AVD (may take several minutes)..."
+      : "Creating AVD...",
+    "info",
+    { persist: true },
+  );
+
+  try {
+    const created = await callCommand("create_avd", { input: inputPayload });
+    state.creatingAvd = false;
+    state.avdTooling = null;
+    await refreshAvds();
+    setStatus(`Created AVD ${created}`);
+  } finally {
+    state.creatingAvdBusy = false;
+    renderAvds();
+  }
+}
+
+function cancelCreateAvd() {
+  if (state.creatingAvdBusy) {
+    return;
+  }
+  state.creatingAvd = false;
+  renderAvds();
+}
+
+async function handleAvdDelete(name) {
+  if (!name || !window.confirm(`Delete AVD '${name}'?`)) {
+    return;
+  }
+
+  await callCommand("delete_avd", { name });
+  await refreshAvds();
+  setStatus(`Deleted ${name}`);
 }
 
 async function refreshApps() {
@@ -323,18 +580,43 @@ async function refreshNginx() {
   await syncTray();
 }
 
-async function refreshPorts() {
+async function refreshPorts({ afterPending = false } = {}) {
+  if (state.portSearchPromise) {
+    if (!afterPending) {
+      return state.portSearchPromise;
+    }
+
+    try {
+      await state.portSearchPromise;
+    } catch {
+      // A post-kill refresh should still run after a failed earlier lookup.
+    }
+  }
+
   const port = Number(elements.portInput.value || 3000);
-  state.ports = await callCommand("list_processes_by_port", { port });
-  renderPortResult();
+  const searchPromise = callCommand("list_processes_by_port", { port });
+  state.portSearchPromise = searchPromise;
+  elements.portForm.setAttribute("aria-busy", "true");
+  elements.portInput.disabled = true;
+  elements.portForm.querySelector('[type="submit"]').disabled = true;
+
+  try {
+    state.ports = await searchPromise;
+    renderPortResult();
+  } finally {
+    if (state.portSearchPromise === searchPromise) {
+      state.portSearchPromise = null;
+      elements.portForm.setAttribute("aria-busy", "false");
+      elements.portInput.disabled = false;
+      elements.portForm.querySelector('[type="submit"]').disabled = false;
+    }
+  }
 }
 
 async function loadApp() {
-  setStatus("loading");
   try {
     await refreshSettings();
     await Promise.allSettled([refreshApps(), refreshNginx(), refreshAvds(), refreshPorts()]);
-    setStatus("ready");
   } catch (error) {
     setError(error);
   }
@@ -358,7 +640,6 @@ async function addApp() {
     ],
   });
   if (!path) {
-    setStatus("file selection cancelled");
     return;
   }
 
@@ -372,7 +653,6 @@ async function addApp() {
   state.editingAppId = saved.id;
   renderApps();
   focusInlineAppName();
-  setStatus("app added - edit display name");
 }
 
 function startInlineAppNameEdit(app) {
@@ -393,27 +673,25 @@ async function saveInlineAppName(app) {
   const input = elements.appsList.querySelector(`.app-name-input[data-app-id="${app.id}"]`);
   const name = input?.value.trim();
   if (!name) {
-    setError("display name is required");
+    setError("Display name is required");
     input?.focus();
     return;
   }
 
   state.editingAppId = null;
   await saveCustomApp({ ...app, name });
-  setStatus("display name saved");
+  setStatus("App renamed");
 }
 
 function cancelInlineAppNameEdit() {
   state.editingAppId = null;
   renderApps();
-  setStatus("display name edit cancelled");
 }
 
 async function handleAvdStart(name) {
-  setStatus(`starting ${name}`);
   await callCommand("start_avd", { name });
   window.setTimeout(refreshAvds, 1200);
-  setStatus(`${name} starting`);
+  setStatus(`Starting ${name}`);
 }
 
 async function handleAvdStop(name, serial) {
@@ -425,10 +703,9 @@ async function handleAvdStop(name, serial) {
     return;
   }
 
-  setStatus(`stopping ${name}`);
   await callCommand("stop_avd", { serial });
   await refreshAvds();
-  setStatus(`${name} stopped`);
+  setStatus(`Stopped ${name}`);
 }
 
 async function handleSettingToggle(key) {
@@ -442,7 +719,7 @@ async function handleSettingToggle(key) {
   }
 
   await saveSettings();
-  setStatus("settings saved");
+  setStatus("Settings saved");
 }
 
 async function ensureNginxConfig() {
@@ -457,7 +734,6 @@ async function ensureNginxConfig() {
     filters: [{ name: "Nginx executable", extensions: ["exe"] }],
   });
   if (!path) {
-    setStatus("nginx selection cancelled");
     return null;
   }
 
@@ -467,21 +743,33 @@ async function ensureNginxConfig() {
   return state.nginx;
 }
 
+function readSecretByteLength() {
+  const raw = elements.secretLength?.value ?? DEFAULT_SECRET_BYTES;
+  return parseSecretByteLength(raw);
+}
+
 async function handleAction(event) {
   const button = event.target.closest("[data-action]");
 
-  if (!button) {
+  if (!button || button.disabled) {
     return;
   }
 
   const { action, id, key, name, serial, pid } = button.dataset;
   button.disabled = true;
-  writeLog(`action: ${action}`);
 
   try {
-    if (action === "scan-avd") {
+    if (action === "open-create-avd") {
+      await openCreateAvd();
+    } else if (action === "submit-create-avd") {
+      await submitCreateAvd();
+    } else if (action === "cancel-create-avd") {
+      cancelCreateAvd();
+    } else if (action === "delete-avd") {
+      await handleAvdDelete(name);
+    } else if (action === "scan-avd") {
       await refreshAvds();
-      setStatus("AVDs scanned");
+      setStatus("AVDs refreshed");
     } else if (action === "set-sdk") {
       const path = await pickPath({
         multiple: false,
@@ -490,11 +778,10 @@ async function handleAction(event) {
       });
       if (path) {
         state.settings = { ...state.settings, androidSdkPath: path || null };
+        state.avdTooling = null;
         await saveSettings();
         await refreshAvds();
-        setStatus("Android SDK selected");
-      } else {
-        setStatus("SDK selection cancelled");
+        setStatus("Android SDK updated");
       }
     } else if (action === "start-avd") {
       await handleAvdStart(name);
@@ -513,59 +800,83 @@ async function handleAction(event) {
       if (app && window.confirm(`Delete ${app.name}?`)) {
         await callCommand("delete_custom_app", { id });
         await refreshApps();
-        setStatus("app deleted");
+        setStatus("App deleted");
       }
     } else if (action === "run-app") {
       await callCommand("launch_custom_app", { id });
-      setStatus("app launched");
+      setStatus("App launched");
     } else if (action === "nginx-start") {
       if (await ensureNginxConfig()) {
-        await callCommand("start_nginx");
-        setStatus("nginx started");
+        const outcome = await callCommand("start_nginx");
+        setStatus(outcome === "alreadyRunning" ? "Nginx already running" : "Nginx started");
       }
     } else if (action === "nginx-stop") {
       if ((await ensureNginxConfig()) && window.confirm("Stop nginx?")) {
         await callCommand("stop_nginx");
-        setStatus("nginx stopped");
+        setStatus("Nginx stopped");
       }
     } else if (action === "nginx-reload") {
       if (await ensureNginxConfig()) {
         await callCommand("reload_nginx");
-        setStatus("nginx reloaded");
+        setStatus("Nginx reloaded");
       }
     } else if (action === "nginx-config") {
       if (await ensureNginxConfig()) {
         await callCommand("open_nginx_config");
-        setStatus("config opened");
+        setStatus("Opened nginx.conf");
       }
     } else if (action === "toggle-setting") {
       await handleSettingToggle(key);
     } else if (action === "kill-process") {
       if (window.confirm(`Kill PID ${pid}?`)) {
         await callCommand("kill_process", { pid: Number(pid) });
-        await refreshPorts();
-        setStatus("process killed");
+        await refreshPorts({ afterPending: true });
+        setStatus(`Killed PID ${pid}`);
       }
+    } else if (action === "generate-api-token") {
+      const bytes = readSecretByteLength();
+      await copyToClipboard(generateApiToken(bytes));
+      setStatus(`API token copied (${bytes}B)`);
+    } else if (action === "generate-password") {
+      const bytes = readSecretByteLength();
+      await copyToClipboard(generatePassword(bytes));
+      setStatus(`Password copied (${bytes}B)`);
     }
   } catch (error) {
     setError(error);
   } finally {
-    button.disabled = false;
+    if (button.isConnected && !state.creatingAvdBusy) {
+      button.disabled = false;
+    }
   }
 }
 
 async function handlePortSearch(event) {
   event.preventDefault();
-  setStatus("searching port");
   try {
     await refreshPorts();
-    setStatus("port lookup complete");
   } catch (error) {
     setError(error);
   }
 }
 
-function handleAppNameKeydown(event) {
+function handleGlobalKeydown(event) {
+  if (event.key === "Escape" && elements.toast && !elements.toast.hidden) {
+    hideToast();
+    return;
+  }
+
+  if (event.target.closest(".avd-create-form")) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      elements.avdList.querySelector('[data-action="submit-create-avd"]')?.click();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelCreateAvd();
+    }
+    return;
+  }
+
   if (!event.target.matches(".app-name-input")) {
     return;
   }
@@ -580,14 +891,19 @@ function handleAppNameKeydown(event) {
 }
 
 function init() {
+  hydrateIcons();
+
   elements.avdList = document.querySelector("#avd-list");
   elements.appsList = document.querySelector("#apps-list");
   elements.nginxPath = document.querySelector("#nginx-path");
   elements.portForm = document.querySelector("#port-form");
   elements.portInput = document.querySelector("#port-input");
   elements.portResult = document.querySelector("#port-result");
+  elements.secretLength = document.querySelector("#secret-length");
   elements.settingsGrid = document.querySelector("#settings-grid");
-  elements.actionLog = document.querySelector("#action-log");
+  elements.toast = document.querySelector("#toast");
+  elements.toastMessage = document.querySelector("#toast-message");
+  elements.toastClose = document.querySelector("#toast-close");
 
   renderAvds();
   renderApps();
@@ -596,8 +912,9 @@ function init() {
   renderPortResult();
 
   document.addEventListener("click", handleAction);
-  document.addEventListener("keydown", handleAppNameKeydown);
+  document.addEventListener("keydown", handleGlobalKeydown);
   elements.portForm.addEventListener("submit", handlePortSearch);
+  elements.toastClose.addEventListener("click", hideToast);
   loadApp();
 }
 

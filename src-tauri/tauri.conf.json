@@ -11,11 +11,11 @@
     "windows": [
       {
         "title": "devtool",
-        "width": 330,
-        "height": 390,
-        "minWidth": 330,
-        "maxWidth": 330,
-        "minHeight": 390,
+        "width": 350,
+        "height": 420,
+        "minWidth": 320,
+        "maxWidth": 460,
+        "minHeight": 380,
         "resizable": true,
         "maximizable": false,
         "decorations": true

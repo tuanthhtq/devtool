@@ -4,27 +4,18 @@
 
 - Pencil design: `design/v1.pen`
 - Main frame: `I9BMOk` (`DevTool Compact Window`)
-- Window width: fixed at 330 px
-- Window height: starts at 390 px and remains vertically resizable
+- Window width: starts at 350 px (min 320 px, max 460 px)
+- Window height: starts at 420 px (min 380 px) and remains resizable
 
 ## Structure
 
-The interface is a compact dark vertical tool surface with flat sections for
-Android AVDs, custom apps, Nginx, ports, and startup settings. All sections
-share one background instead of using card containers. Content padding is kept
-tight at 10 px, and the compact viewport scrolls when dynamic rows exceed the
-available height. The native Tauri titlebar remains enabled with maximize
-disabled. Equal minimum and maximum widths lock horizontal resizing while
-preserving vertical resizing.
-
-An action console sits at the bottom with a 64 px minimum height and grows with
-the window. It keeps the latest 50 timestamped frontend action, status, and error
-messages and scrolls to the most recent entry.
-
-Primary actions use borderless emoji controls placed beside each section title.
-Reduced section, list, and row spacing keeps the full utility surface compact.
-Heading rows align title and action emojis as one left-side group instead of
-pushing actions to the far edge.
+The interface is a compact dark vertical utility window on a single flat
+surface (`#0c1016`) separated by hairline horizontal dividers for Android AVD,
+Apps, Nginx, Ports, Secrets, and Settings (no nested cards). Section headers
+pair subtle uppercase labels on the left with right-aligned Lucide inline SVG
+icon buttons on the right. There is no permanent bottom log console; transient
+status messages appear as an auto-dismissing toast while errors use
+`role="alert"` and persist until dismissed by button or `Escape`.
 App paths use a native file picker with `.exe`, `.bat`, `.cmd`, `.jar`, and
 `.vbs` support, while Android SDK configuration uses a native folder picker.
 Native launch routes scripts through the right Windows host, including
@@ -44,8 +35,18 @@ Start, Stop, Reload, and Edit.
 
 ## Implementation
 
-- `src/index.html`: semantic controls and action console.
-- `src/styles.css`: Pencil-aligned compact styling.
-- `src/main.js`: rendering, command invocation, and action logging.
-- `src-tauri/src/lib.rs`: Tauri commands plus native tray lifecycle behavior.
+- `src/index.html`: flat compact controls (AVD create/delete, Apps, Nginx, 3x wider Port input, Secrets with configurable byte length) and floating toast container.
+- `src/styles.css`: tokenized compact dark styling and semantic icon button states.
+- `src/icons.js`: zero-dependency inline Lucide-style SVG icon definitions and DOM hydration.
+- `src/secrets.js`: CSPRNG API token (`encodeURIComponent(base64)`) and password (`base64url`) generators with configurable byte length (`1..256`, default `32`).
+- `src/main.js`: rendering, AVD inline creation with Root/No-Root & ABI selection + auto-download, command invocation, clipboard copy, and toast feedback.
+- `src-tauri/src/lib.rs`: Tauri commands (including Android SDK/JBR/CLI auto-detection, system image download, AVD create/delete, and Windows clipboard write) plus native tray lifecycle behavior.
 - `src-tauri/tauri.conf.json`: fixed compact window with native decorations.
+
+## Application icons
+
+The app, Tauri window, taskbar, tray, and installer icons use the transparent
+`>_` developer emblem generated as a 1024x1024 RGBA PNG (centered within
+880x880). `pnpm tauri icon` generates the checked-in assets under
+`src-tauri/icons`; `src-tauri/tauri.conf.json` bundles the 32x32, 128x128,
+128x128@2x, ICNS, and ICO outputs.
