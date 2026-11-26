@@ -5,7 +5,7 @@
 - Pencil design: `design/v1.pen`
 - Main frame: `I9BMOk` (`DevTool Compact Window`)
 - Window width: starts at 350 px (min 320 px, max 460 px)
-- Window height: starts at 420 px (min 380 px) and remains resizable
+- Window height: dynamically auto-fits `.app-shell` content height via `ResizeObserver` + `set_content_height` (clamped between 220 px and screen work area)
 
 ## Structure
 
@@ -22,9 +22,10 @@ Native launch routes scripts through the right Windows host, including
 `wscript.exe` for `.vbs` files.
 
 After a file is selected, its filename seeds the display name and the new row
-immediately enters inline edit mode. App rows show only the display name; the
-stored path remains hidden. The pencil action edits the name in place with
-Save/Cancel controls, Enter/Escape shortcuts, and no file picker or path change.
+immediately enters inline edit mode. App rows show the display name (with the
+full path in the tooltip). The edit action opens an inline form for editing both
+the display name and executable path (including a native Browse picker), with
+Save/Cancel controls and Enter/Escape shortcuts.
 
 Settings expose only Start Windows and Start minimized as compact checkboxes.
 Closing or minimizing always hides the main window to the native system tray. A

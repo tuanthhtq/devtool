@@ -238,6 +238,44 @@ fn hide_main_window(app: tauri::AppHandle) -> AppResult<()> {
 }
 
 #[tauri::command]
+fn set_content_height(window: tauri::WebviewWindow, height: f64) -> AppResult<()> {
+    if !height.is_finite() || height <= 0.0 || window.is_minimized().unwrap_or(false) {
+        return Ok(());
+    }
+
+    let scale = window.scale_factor().map_err(to_message)?;
+    let inner = window
+        .inner_size()
+        .map_err(to_message)?
+        .to_logical::<f64>(scale);
+    if inner.width <= 0.0 {
+        return Ok(());
+    }
+
+    let max_height = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .map(|monitor| {
+            let work = monitor
+                .work_area()
+                .size
+                .to_logical::<f64>(monitor.scale_factor());
+            (work.height - 64.0).max(260.0)
+        })
+        .unwrap_or(820.0);
+
+    let target_height = height.ceil().clamp(220.0, max_height);
+    if (inner.height - target_height).abs() < 1.0 {
+        return Ok(());
+    }
+
+    window
+        .set_size(tauri::LogicalSize::new(inner.width, target_height))
+        .map_err(to_message)
+}
+
+#[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
@@ -1958,6 +1996,7 @@ pub fn run() {
             get_start_with_windows_status,
             show_main_window,
             hide_main_window,
+            set_content_height,
             quit_app,
             refresh_tray,
             scan_avds,

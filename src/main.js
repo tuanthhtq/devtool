@@ -24,6 +24,7 @@ const state = {
   nginx: null,
   portSearchPromise: null,
   ports: [],
+  resizeFrame: null,
   toastTimer: null,
   settings: {
     startWithWindows: false,
@@ -93,6 +94,20 @@ function setStatus(message) {
 function setError(error) {
   const message = error instanceof Error ? error.message : String(error);
   showToast(message, "error");
+}
+
+function scheduleWindowFit() {
+  if (!invoke || !elements.appShell || state.resizeFrame !== null) {
+    return;
+  }
+
+  state.resizeFrame = window.requestAnimationFrame(() => {
+    state.resizeFrame = null;
+    const height = Math.ceil(elements.appShell.getBoundingClientRect().height);
+    if (height > 0) {
+      invoke("set_content_height", { height }).catch(() => {});
+    }
+  });
 }
 
 function createIconButton(label, variantClass, action, iconName, dataset = {}, options = {}) {
@@ -335,45 +350,82 @@ function renderApps() {
   }
 
   for (const app of state.apps) {
+    if (state.editingAppId === app.id) {
+      const form = document.createElement("article");
+      form.className = "app-edit-form app-row";
+      form.dataset.appId = app.id;
+
+      const nameRow = document.createElement("div");
+      nameRow.className = "app-edit-row";
+
+      const nameInput = document.createElement("input");
+      nameInput.className = "app-name-input";
+      nameInput.type = "text";
+      nameInput.value = app.name;
+      nameInput.placeholder = "Display name";
+      nameInput.dataset.appId = app.id;
+      nameInput.setAttribute("aria-label", "Display name");
+
+      const nameActions = document.createElement("div");
+      nameActions.className = "row-actions";
+      nameActions.append(
+        createIconButton("Save app", "icon-btn-success", "save-app-edit", "check", {
+          id: app.id,
+        }),
+        createIconButton("Cancel", "", "cancel-app-edit", "x", { id: app.id }),
+      );
+      nameRow.append(nameInput, nameActions);
+
+      const pathRow = document.createElement("div");
+      pathRow.className = "app-edit-row";
+
+      const pathInput = document.createElement("input");
+      pathInput.className = "app-path-input";
+      pathInput.type = "text";
+      pathInput.value = app.path;
+      pathInput.placeholder = "Executable path";
+      pathInput.dataset.appId = app.id;
+      pathInput.setAttribute("aria-label", "Executable path");
+
+      const pathActions = document.createElement("div");
+      pathActions.className = "row-actions";
+      pathActions.append(
+        createIconButton(
+          "Browse executable",
+          "icon-btn-accent",
+          "browse-app-path",
+          "folder",
+          { id: app.id },
+        ),
+      );
+      pathRow.append(pathInput, pathActions);
+
+      form.append(nameRow, pathRow);
+      elements.appsList.append(form);
+      continue;
+    }
+
     const row = document.createElement("article");
     row.className = "list-row app-row";
 
     const main = document.createElement("div");
     main.className = "item-main";
 
+    const title = document.createElement("p");
+    title.className = "item-title";
+    title.textContent = app.name;
+    title.title = `${app.name}\n${app.path}`;
+    main.append(title);
+
     const actions = document.createElement("div");
     actions.className = "row-actions";
-
-    if (state.editingAppId === app.id) {
-      const input = document.createElement("input");
-      input.className = "app-name-input";
-      input.type = "text";
-      input.value = app.name;
-      input.dataset.appId = app.id;
-      input.setAttribute("aria-label", "Display name");
-      main.append(input);
-
-      actions.append(
-        createIconButton("Save name", "icon-btn-success", "save-app-name", "check", {
-          id: app.id,
-        }),
-        createIconButton("Cancel", "", "cancel-app-name", "x", { id: app.id }),
-      );
-    } else {
-      const title = document.createElement("p");
-      title.className = "item-title";
-      title.textContent = app.name;
-      title.title = app.name;
-      main.append(title);
-
-      actions.append(
-        createIconButton("Run app", "icon-btn-success", "run-app", "play", { id: app.id }),
-        createIconButton("Rename app", "", "edit-app", "pencil", { id: app.id }),
-        createIconButton("Delete app", "icon-btn-danger", "delete-app", "trash", {
-          id: app.id,
-        }),
-      );
-    }
+    actions.append(
+      createIconButton("Run app", "icon-btn-success", "run-app", "play", { id: app.id }),
+      createIconButton("Edit app", "", "edit-app", "pencil", { id: app.id }),
+      createIconButton("Delete app", "icon-btn-danger", "delete-app", "trash", {
+        id: app.id,
+      }),
+    );
 
     row.append(main, actions);
     elements.appsList.append(row);
@@ -655,7 +707,7 @@ async function addApp() {
   focusInlineAppName();
 }
 
-function startInlineAppNameEdit(app) {
+function startInlineAppEdit(app) {
   if (!app) {
     throw new Error("app not found");
   }
@@ -665,25 +717,66 @@ function startInlineAppNameEdit(app) {
   focusInlineAppName();
 }
 
-async function saveInlineAppName(app) {
+async function browseInlineAppPath(app) {
   if (!app) {
     throw new Error("app not found");
   }
 
-  const input = elements.appsList.querySelector(`.app-name-input[data-app-id="${app.id}"]`);
-  const name = input?.value.trim();
+  const nameInput = elements.appsList.querySelector(`.app-name-input[data-app-id="${app.id}"]`);
+  const pathInput = elements.appsList.querySelector(`.app-path-input[data-app-id="${app.id}"]`);
+  const currentPath = pathInput?.value.trim().replace(/^"+|"+$/g, "") || app.path || undefined;
+
+  const selected = await pickPath({
+    multiple: false,
+    directory: false,
+    defaultPath: currentPath,
+    filters: [
+      {
+        name: "Applications",
+        extensions: ["exe", "bat", "cmd", "jar", "vbs"],
+      },
+    ],
+  });
+
+  if (!selected || !pathInput) {
+    return;
+  }
+
+  pathInput.value = selected;
+  if (nameInput && !nameInput.value.trim()) {
+    nameInput.value = appNameFromPath(selected);
+  }
+  pathInput.focus();
+}
+
+async function saveInlineAppEdit(app) {
+  if (!app) {
+    throw new Error("app not found");
+  }
+
+  const nameInput = elements.appsList.querySelector(`.app-name-input[data-app-id="${app.id}"]`);
+  const pathInput = elements.appsList.querySelector(`.app-path-input[data-app-id="${app.id}"]`);
+  const name = nameInput?.value.trim();
+  const path = pathInput?.value.trim().replace(/^"+|"+$/g, "");
+
   if (!name) {
     setError("Display name is required");
-    input?.focus();
+    nameInput?.focus();
+    return;
+  }
+
+  if (!path) {
+    setError("Executable path is required");
+    pathInput?.focus();
     return;
   }
 
   state.editingAppId = null;
-  await saveCustomApp({ ...app, name });
-  setStatus("App renamed");
+  await saveCustomApp({ ...app, name, path });
+  setStatus("App saved");
 }
 
-function cancelInlineAppNameEdit() {
+function cancelInlineAppEdit() {
   state.editingAppId = null;
   renderApps();
 }
@@ -790,11 +883,13 @@ async function handleAction(event) {
     } else if (action === "add-app") {
       await addApp();
     } else if (action === "edit-app") {
-      startInlineAppNameEdit(state.apps.find((app) => app.id === id));
-    } else if (action === "save-app-name") {
-      await saveInlineAppName(state.apps.find((app) => app.id === id));
-    } else if (action === "cancel-app-name") {
-      cancelInlineAppNameEdit();
+      startInlineAppEdit(state.apps.find((app) => app.id === id));
+    } else if (action === "browse-app-path") {
+      await browseInlineAppPath(state.apps.find((app) => app.id === id));
+    } else if (action === "save-app-edit") {
+      await saveInlineAppEdit(state.apps.find((app) => app.id === id));
+    } else if (action === "cancel-app-edit") {
+      cancelInlineAppEdit();
     } else if (action === "delete-app") {
       const app = state.apps.find((candidate) => candidate.id === id);
       if (app && window.confirm(`Delete ${app.name}?`)) {
@@ -867,7 +962,7 @@ function handleGlobalKeydown(event) {
   }
 
   if (event.target.closest(".avd-create-form")) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.target.closest("button")) {
       event.preventDefault();
       elements.avdList.querySelector('[data-action="submit-create-avd"]')?.click();
     } else if (event.key === "Escape") {
@@ -877,22 +972,22 @@ function handleGlobalKeydown(event) {
     return;
   }
 
-  if (!event.target.matches(".app-name-input")) {
-    return;
-  }
-
-  if (event.key === "Enter") {
-    event.preventDefault();
-    event.target.closest(".app-row")?.querySelector('[data-action="save-app-name"]')?.click();
-  } else if (event.key === "Escape") {
-    event.preventDefault();
-    cancelInlineAppNameEdit();
+  const appEditForm = event.target.closest(".app-edit-form");
+  if (appEditForm) {
+    if (event.key === "Enter" && !event.target.closest("button")) {
+      event.preventDefault();
+      appEditForm.querySelector('[data-action="save-app-edit"]')?.click();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelInlineAppEdit();
+    }
   }
 }
 
 function init() {
   hydrateIcons();
 
+  elements.appShell = document.querySelector(".app-shell");
   elements.avdList = document.querySelector("#avd-list");
   elements.appsList = document.querySelector("#apps-list");
   elements.nginxPath = document.querySelector("#nginx-path");
@@ -910,6 +1005,12 @@ function init() {
   renderNginx();
   renderSettings();
   renderPortResult();
+
+  if (typeof ResizeObserver !== "undefined" && elements.appShell) {
+    const observer = new ResizeObserver(scheduleWindowFit);
+    observer.observe(elements.appShell);
+  }
+  window.addEventListener("focus", scheduleWindowFit);
 
   document.addEventListener("click", handleAction);
   document.addEventListener("keydown", handleGlobalKeydown);

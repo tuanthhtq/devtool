@@ -55,7 +55,6 @@
 
 body {
   min-width: 320px;
-  min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -63,20 +62,29 @@ body {
   color: var(--text);
   font-size: 0.75rem;
   caret-color: var(--accent-fg);
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-body::-webkit-scrollbar {
-  width: 6px;
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
 
-body::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: var(--scrollbar-thumb);
 }
 
-body::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
 
@@ -224,6 +232,7 @@ h2 {
 .port-input:focus-visible,
 .length-input:focus-visible,
 .app-name-input:focus-visible,
+.app-path-input:focus-visible,
 .avd-name-input:focus-visible,
 .avd-select:focus-visible,
 .checkbox-setting input:focus-visible {
@@ -264,7 +273,8 @@ h2 {
   background: transparent;
 }
 
-.avd-create-form {
+.avd-create-form,
+.app-edit-form {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -274,14 +284,17 @@ h2 {
   background: var(--surface);
 }
 
-.avd-create-top {
+.avd-create-top,
+.app-edit-row {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .avd-name-input,
-.avd-select {
+.avd-select,
+.app-name-input,
+.app-path-input {
   width: 100%;
   min-width: 0;
   height: 26px;
@@ -293,8 +306,15 @@ h2 {
   font-size: 0.75rem;
 }
 
+.app-path-input {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
 .avd-name-input:focus,
-.avd-select:focus {
+.avd-select:focus,
+.app-name-input:focus,
+.app-path-input:focus {
   border-color: var(--accent);
 }
 
@@ -351,18 +371,6 @@ h2 {
   white-space: nowrap;
 }
 
-.app-name-input {
-  width: 100%;
-  height: 26px;
-  padding: 0 6px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.8125rem;
-  font-weight: 500;
-}
-
 .port-search {
   display: flex;
   min-width: 0;
@@ -405,6 +413,7 @@ h2 {
 
 .length-field {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 6px;
   color: var(--text-muted);
@@ -413,7 +422,9 @@ h2 {
 }
 
 .length-input {
-  width: 6ch;
+  width: 18ch;
+  max-width: 100%;
+  min-width: 0;
   height: 26px;
   padding: 0 6px;
   border: 1px solid var(--border);
@@ -424,7 +435,7 @@ h2 {
   font-size: 0.75rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: left;
 }
 
 .secret-grid {
