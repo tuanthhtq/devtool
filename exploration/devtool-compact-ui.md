@@ -11,7 +11,8 @@
 
 The interface is a compact dark vertical utility window on a single flat
 surface (`#0c1016`) separated by hairline horizontal dividers for Android AVD,
-Apps, Nginx, Ports, Secrets, and Settings (no nested cards). Section headers
+Apps, Nginx, Ports, Secrets (`API Token` + `Rand Pwd`), Password Hash
+(`scrypt` / `pbkdf2` / `sha256`), and Settings (no nested cards). Section headers
 pair subtle uppercase labels on the left with right-aligned Lucide inline SVG
 icon buttons on the right. There is no permanent bottom log console; transient
 status messages appear as an auto-dismissing toast while errors use

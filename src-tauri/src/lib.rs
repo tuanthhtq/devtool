@@ -127,6 +127,15 @@ struct CreateAvdInput {
     profile: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PasswordHashInput {
+    password: String,
+    algorithm: String,
+    salt: Option<String>,
+    hash_len: Option<usize>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct NginxConfig {
@@ -620,6 +629,13 @@ async fn kill_process(pid: u32) -> AppResult<()> {
 #[tauri::command]
 fn copy_to_clipboard(text: String) -> AppResult<()> {
     write_clipboard_text(&text)
+}
+
+#[tauri::command]
+async fn hash_password(input: PasswordHashInput) -> AppResult<String> {
+    tauri::async_runtime::spawn_blocking(move || hash_password_blocking(&input))
+        .await
+        .map_err(to_message)?
 }
 
 fn refresh_tray_menu(app: &tauri::AppHandle) -> AppResult<()> {
@@ -1850,6 +1866,108 @@ fn encode_utf16_nul(text: &str) -> Vec<u16> {
     text.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
+fn bytes_to_hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for &byte in bytes {
+        out.push(HEX[(byte >> 4) as usize] as char);
+        out.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    out
+}
+
+fn random_salt_hex(byte_len: usize) -> AppResult<String> {
+    let mut bytes = vec![0_u8; byte_len];
+    getrandom::getrandom(&mut bytes).map_err(|err| format!("CSPRNG failed: {err}"))?;
+    Ok(bytes_to_hex(&bytes))
+}
+
+fn hash_password_blocking(input: &PasswordHashInput) -> AppResult<String> {
+    use sha2::Digest;
+
+    if input.password.is_empty() {
+        return Err("Password input is required".to_string());
+    }
+    if input.password.chars().count() > 128 {
+        return Err("Password must be at most 128 characters".to_string());
+    }
+
+    let algo = input.algorithm.trim().to_ascii_lowercase();
+    let custom_salt = input
+        .salt
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+
+    if let Some(salt) = custom_salt {
+        if salt.contains(':') {
+            return Err("Salt cannot contain ':'".to_string());
+        }
+    }
+
+    if algo == "sha256" {
+        return match custom_salt {
+            Some(salt) => {
+                let mut hasher = sha2::Sha256::new();
+                hasher.update(salt.as_bytes());
+                hasher.update(input.password.as_bytes());
+                let hex = bytes_to_hex(&hasher.finalize());
+                Ok(format!("sha256:{salt}:{hex}"))
+            }
+            None => {
+                let mut hasher = sha2::Sha256::new();
+                hasher.update(input.password.as_bytes());
+                Ok(bytes_to_hex(&hasher.finalize()))
+            }
+        };
+    }
+
+    let hash_len = input.hash_len.unwrap_or(64);
+    if !(16..=256).contains(&hash_len) {
+        return Err("Hash length must be between 16 and 256 bytes".to_string());
+    }
+
+    let salt = match custom_salt {
+        Some(value) => value.to_string(),
+        None => random_salt_hex(16)?,
+    };
+
+    let mut derived = vec![0_u8; hash_len];
+    match algo.as_str() {
+        "scrypt" => {
+            // Matches Node.js crypto.scrypt defaults: N = 16384 (2^14), r = 8, p = 1
+            let params = scrypt::Params::new(14, 8, 1, hash_len).map_err(to_message)?;
+            scrypt::scrypt(
+                input.password.as_bytes(),
+                salt.as_bytes(),
+                &params,
+                &mut derived,
+            )
+            .map_err(to_message)?;
+            Ok(format!("scrypt:{salt}:{}", bytes_to_hex(&derived)))
+        }
+        "pbkdf2-sha256" => {
+            pbkdf2::pbkdf2_hmac::<sha2::Sha256>(
+                input.password.as_bytes(),
+                salt.as_bytes(),
+                100_000,
+                &mut derived,
+            );
+            Ok(format!("pbkdf2_sha256:{salt}:{}", bytes_to_hex(&derived)))
+        }
+        "pbkdf2-sha512" => {
+            pbkdf2::pbkdf2_hmac::<sha2::Sha512>(
+                input.password.as_bytes(),
+                salt.as_bytes(),
+                100_000,
+                &mut derived,
+            );
+            Ok(format!("pbkdf2_sha512:{salt}:{}", bytes_to_hex(&derived)))
+        }
+        _ => Err(format!("Unsupported hash algorithm: {}", input.algorithm)),
+    }
+}
+
 #[cfg(windows)]
 struct ClipboardGuard;
 
@@ -2018,6 +2136,7 @@ pub fn run() {
             list_processes_by_port,
             kill_process,
             copy_to_clipboard,
+            hash_password,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -2150,5 +2269,45 @@ mod tests {
             parse_java_major_version("java version \"1.8.0_391\""),
             Some(8)
         );
+    }
+
+    #[test]
+    fn hashes_scrypt_identically_to_node_defaults() {
+        let out = hash_password_blocking(&PasswordHashInput {
+            password: "correct-horse-battery".to_string(),
+            algorithm: "scrypt".to_string(),
+            salt: Some("00112233445566778899aabbccddeeff".to_string()),
+            hash_len: Some(64),
+        })
+        .unwrap();
+        assert_eq!(
+            out,
+            "scrypt:00112233445566778899aabbccddeeff:fa1cebea8c6de19d809faed83e9f863721e3b4c6312bf13fdc6314311b05e875b1db28c6590848b211a1144547b1ac72659cc33801305a3ef37211081aae1f5b"
+        );
+
+        let pbkdf2_out = hash_password_blocking(&PasswordHashInput {
+            password: "correct-horse-battery".to_string(),
+            algorithm: "pbkdf2-sha256".to_string(),
+            salt: Some("00112233445566778899aabbccddeeff".to_string()),
+            hash_len: Some(64),
+        })
+        .unwrap();
+        assert_eq!(
+            pbkdf2_out,
+            "pbkdf2_sha256:00112233445566778899aabbccddeeff:ffbaffa4bbd5a4c38dde7a9b315641a734d4ffc0d94fe6c84f1a7287e5ea539af9ee161fa5740f24bb1bf01ded4c0658fc96ba7dc1ed70862633ddb714617e3b"
+        );
+
+        // Random 16-byte salt (32 hex chars) when salt is empty
+        let random_out = hash_password_blocking(&PasswordHashInput {
+            password: "secret".to_string(),
+            algorithm: "scrypt".to_string(),
+            salt: None,
+            hash_len: None,
+        })
+        .unwrap();
+        let random_parts = random_out.split(':').collect::<Vec<_>>();
+        assert_eq!(random_parts[0], "scrypt");
+        assert_eq!(random_parts[1].len(), 32);
+        assert_eq!(random_parts[2].len(), 128);
     }
 }

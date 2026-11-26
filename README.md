@@ -18,9 +18,9 @@ A compact Windows developer utility built with **Tauri v2**, **Rust**, and **van
   - Start (with live master PID verification), stop, reload, and open `conf/nginx.conf` directly.
 - **Port & Process Inspector**
   - Inspect processes listening on or using a TCP/UDP port (`netstat -ano` + `tasklist`) and terminate processes by PID with confirmation.
-- **Secret Generator**
-  - Generate cryptographically random **API Tokens** (`encodeURIComponent(base64)`) and **Passwords** (`base64url`) directly into the native Windows clipboard.
-  - Configurable random byte length (`1..256`, default `32` bytes).
+- **Secret Generator & Password Hasher**
+  - Generate cryptographically random **API Tokens** (`encodeURIComponent(base64)`) and **Rand Pwd** (`base64url`) directly into the native Windows clipboard with configurable byte length (`1..256`, default `32`).
+  - Hash user-supplied passwords via **scrypt** (`N=16384, r=8, p=1`, default `16`-byte random hex salt, `64`-byte key length -> `scrypt:<salt_hex>:<hash_hex>`), `pbkdf2-sha256`, `pbkdf2-sha512`, or `sha256`.
 - **Windows Tray & Startup**
   - Close or minimize to the system tray; left-click restores the window, right-click opens quick actions for AVDs, Custom Apps, and Nginx.
   - Optional **Start with Windows** (`HKCU\...\Run`) and **Start minimized**.

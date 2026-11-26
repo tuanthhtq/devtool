@@ -89,11 +89,42 @@
             <span data-icon="key" data-icon-size="13"></span>
             <span>API Token</span>
           </button>
-          <button class="action-btn action-btn-success" type="button" data-action="generate-password" title="Generate password and copy to clipboard">
+          <button class="action-btn action-btn-success" type="button" data-action="generate-password" title="Generate random password and copy to clipboard">
             <span data-icon="lock" data-icon-size="13"></span>
-            <span>Password</span>
+            <span>Rand Pwd</span>
           </button>
         </div>
+      </section>
+
+      <section class="section" aria-labelledby="hash-title">
+        <div class="section-header">
+          <h2 id="hash-title">Password Hash</h2>
+          <select id="hash-algo" class="algo-select" aria-label="Hash algorithm">
+            <option value="scrypt" selected>scrypt</option>
+            <option value="pbkdf2-sha256">pbkdf2-sha256</option>
+            <option value="pbkdf2-sha512">pbkdf2-sha512</option>
+            <option value="sha256">sha256</option>
+          </select>
+        </div>
+        <form class="hash-form" id="hash-form">
+          <div class="hash-row">
+            <input id="hash-input" class="hash-input" type="password" maxlength="128" placeholder="Password input" aria-label="Password input" autocomplete="off" />
+            <button class="icon-btn" id="hash-visibility-btn" type="button" data-action="toggle-hash-visibility" title="Show password" aria-label="Show password" aria-pressed="false">
+              <span data-icon="eye" data-icon-size="14"></span>
+            </button>
+          </div>
+          <div class="hash-row">
+            <input id="hash-salt" class="hash-salt-input" type="text" placeholder="Salt (empty = random 16B)" aria-label="Salt" autocomplete="off" spellcheck="false" />
+            <label class="hash-len-field" for="hash-len">
+              <span>Len</span>
+              <input id="hash-len" class="hash-len-input" type="number" min="16" max="256" value="64" />
+            </label>
+          </div>
+          <button class="action-btn action-btn-accent hash-submit-btn" type="submit" title="Hash password and copy to clipboard">
+            <span data-icon="hash" data-icon-size="13"></span>
+            <span>Hash &amp; Copy</span>
+          </button>
+        </form>
       </section>
 
       <section class="section section-footer" aria-label="Settings">

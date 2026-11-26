@@ -53,6 +53,11 @@
   color: var(--text);
 }
 
+input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
 body {
   min-width: 320px;
   margin: 0;
@@ -231,6 +236,10 @@ h2 {
 .action-btn:focus-visible,
 .port-input:focus-visible,
 .length-input:focus-visible,
+.algo-select:focus-visible,
+.hash-input:focus-visible,
+.hash-salt-input:focus-visible,
+.hash-len-input:focus-visible,
 .app-name-input:focus-visible,
 .app-path-input:focus-visible,
 .avd-name-input:focus-visible,
@@ -442,6 +451,91 @@ h2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+}
+
+.algo-select {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.hash-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.hash-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.hash-input,
+.hash-salt-input {
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.hash-salt-input {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.hash-len-field {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.hash-len-input {
+  width: 6.5ch;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.hash-len-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.algo-select:focus,
+.hash-input:focus,
+.hash-salt-input:focus,
+.hash-len-input:focus {
+  border-color: var(--accent);
+}
+
+.hash-submit-btn {
+  width: 100%;
 }
 
 .action-btn {

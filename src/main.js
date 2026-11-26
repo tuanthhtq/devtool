@@ -24,6 +24,8 @@ const state = {
   nginx: null,
   portSearchPromise: null,
   ports: [],
+  hashVisible: false,
+  lastHashLen: 64,
   resizeFrame: null,
   toastTimer: null,
   settings: {
@@ -935,7 +937,9 @@ async function handleAction(event) {
     } else if (action === "generate-password") {
       const bytes = readSecretByteLength();
       await copyToClipboard(generatePassword(bytes));
-      setStatus(`Password copied (${bytes}B)`);
+      setStatus(`Rand pwd copied (${bytes}B)`);
+    } else if (action === "toggle-hash-visibility") {
+      toggleHashVisibility();
     }
   } catch (error) {
     setError(error);
@@ -952,6 +956,84 @@ async function handlePortSearch(event) {
     await refreshPorts();
   } catch (error) {
     setError(error);
+  }
+}
+
+function toggleHashVisibility() {
+  state.hashVisible = !state.hashVisible;
+  if (!elements.hashInput || !elements.hashVisibilityBtn) {
+    return;
+  }
+
+  elements.hashInput.type = state.hashVisible ? "text" : "password";
+  const label = state.hashVisible ? "Hide password" : "Show password";
+  elements.hashVisibilityBtn.title = label;
+  elements.hashVisibilityBtn.setAttribute("aria-label", label);
+  elements.hashVisibilityBtn.setAttribute("aria-pressed", String(state.hashVisible));
+  elements.hashVisibilityBtn.replaceChildren(
+    createIcon(state.hashVisible ? "eyeOff" : "eye", 14),
+  );
+}
+
+function handleHashAlgoChange() {
+  if (!elements.hashAlgo || !elements.hashLen) {
+    return;
+  }
+
+  const isFixedSha = elements.hashAlgo.value === "sha256";
+  if (isFixedSha) {
+    const current = Number(elements.hashLen.value);
+    if (Number.isInteger(current) && current >= 16 && current <= 256) {
+      state.lastHashLen = current;
+    }
+    elements.hashLen.value = "32";
+    elements.hashLen.disabled = true;
+  } else {
+    elements.hashLen.disabled = false;
+    elements.hashLen.value = String(state.lastHashLen || 64);
+  }
+}
+
+async function handlePasswordHash(event) {
+  event.preventDefault();
+  const submitBtn = elements.hashForm?.querySelector('[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+  }
+
+  try {
+    const password = elements.hashInput?.value ?? "";
+    if (!password) {
+      setError("Password input is required");
+      elements.hashInput?.focus();
+      return;
+    }
+
+    const algorithm = elements.hashAlgo?.value || "scrypt";
+    const salt = elements.hashSalt?.value.trim() || null;
+    let hashLen = null;
+
+    if (algorithm !== "sha256") {
+      const parsedLen = Number(String(elements.hashLen?.value ?? "64").trim());
+      if (!Number.isInteger(parsedLen) || parsedLen < 16 || parsedLen > 256) {
+        setError("Hash length must be an integer between 16 and 256");
+        elements.hashLen?.focus();
+        return;
+      }
+      hashLen = parsedLen;
+    }
+
+    const hashed = await callCommand("hash_password", {
+      input: { password, algorithm, salt, hashLen },
+    });
+    await copyToClipboard(hashed);
+    setStatus(`${algorithm} hash copied`);
+  } catch (error) {
+    setError(error);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+    }
   }
 }
 
@@ -995,6 +1077,12 @@ function init() {
   elements.portInput = document.querySelector("#port-input");
   elements.portResult = document.querySelector("#port-result");
   elements.secretLength = document.querySelector("#secret-length");
+  elements.hashForm = document.querySelector("#hash-form");
+  elements.hashAlgo = document.querySelector("#hash-algo");
+  elements.hashInput = document.querySelector("#hash-input");
+  elements.hashVisibilityBtn = document.querySelector("#hash-visibility-btn");
+  elements.hashSalt = document.querySelector("#hash-salt");
+  elements.hashLen = document.querySelector("#hash-len");
   elements.settingsGrid = document.querySelector("#settings-grid");
   elements.toast = document.querySelector("#toast");
   elements.toastMessage = document.querySelector("#toast-message");
@@ -1015,6 +1103,8 @@ function init() {
   document.addEventListener("click", handleAction);
   document.addEventListener("keydown", handleGlobalKeydown);
   elements.portForm.addEventListener("submit", handlePortSearch);
+  elements.hashForm.addEventListener("submit", handlePasswordHash);
+  elements.hashAlgo.addEventListener("change", handleHashAlgoChange);
   elements.toastClose.addEventListener("click", hideToast);
   loadApp();
 }
